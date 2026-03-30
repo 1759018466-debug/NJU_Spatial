@@ -2,3 +2,5 @@
 HELLO WORLD
 
 ### NJU
+print("You love me, I love you, MIXUE Icecream & Tea! 🍦")
+print("你爱我，我爱你，蜜雪冰城甜蜜蜜！ 🍎")
