@@ -143,6 +143,7 @@ async def convert_single_get(
 class ChatMessageRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
+    conversation_history: Optional[list] = None
 
 
 @router.post("/chat")
@@ -154,9 +155,10 @@ async def chat(request: ChatMessageRequest):
     - 自然语言进行坐标转换
     - 坐标系知识问答
     - 自动识别用户意图
+    - 上下文记忆（通过 conversation_history 参数）
     """
-    # 获取对话历史（这里简化处理，生产环境应存储在数据库）
-    conversation_history = []
+    # 使用前端传入的对话历史
+    conversation_history = request.conversation_history or []
 
     result = ai_service.chat(request.message, conversation_history)
 

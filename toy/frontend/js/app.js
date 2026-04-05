@@ -17,7 +17,9 @@ const state = {
     lastConvert: null,
     useSatellite: false,
     tempMarker: null,  // 临时点击标记
-    infoWindow: null  // 信息窗口
+    infoWindow: null,  // 信息窗口
+    conversationHistory: [],  // AI 对话历史
+    conversationId: 'conv-' + Date.now()  // 会话ID
 };
 
 // ==================== 检查坐标是否在中国境内 ====================
@@ -39,11 +41,15 @@ const API = {
         return await response.json();
     },
 
-    async chat(message) {
+    async chat(message, conversationHistory = []) {
         const response = await fetch(`${CONFIG.API_BASE}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({
+                message,
+                conversation_history: conversationHistory,
+                conversation_id: state.conversationId
+            })
         });
         return await response.json();
     },
@@ -265,12 +271,24 @@ async function sendMessage() {
     addChatMessage('user', message);
     input.value = '';
 
+    // 将用户消息添加到历史
+    state.conversationHistory.push({
+        role: 'user',
+        content: message
+    });
+
     const loadingId = addChatMessage('assistant', '正在思考...');
 
     try {
-        const response = await API.chat(message);
+        const response = await API.chat(message, state.conversationHistory);
         removeMessage(loadingId);
         addChatMessage('assistant', response.response);
+
+        // 将AI回复添加到历史
+        state.conversationHistory.push({
+            role: 'assistant',
+            content: response.response
+        });
 
         // 如果有纠错提示，显示警告
         if (response.warnings && response.warnings.length > 0) {
@@ -300,6 +318,15 @@ function removeMessage(id) {
     const el = document.getElementById(id);
     if (el) el.remove();
 }
+
+// 清空对话历史
+window.clearChatHistory = function() {
+    state.conversationHistory = [];
+    state.conversationId = 'conv-' + Date.now();
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = '';
+    addChatMessage('system', '对话历史已清空');
+};
 
 // ==================== 快速转换 ====================
 async function quickConvert() {
